@@ -1,40 +1,161 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Noise Synth Art</title>
-  <script src="https://cdn.jsdelivr.net/npm/tone@next/build/Tone.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.9/build/dat.gui.min.js"></script>
+  <meta charset="UTF-8">
+  <title>FlickFlick</title>
   <style>
     html, body {
       margin: 0;
-      padding: 0;
       overflow: hidden;
       background: black;
-      touch-action: none;
     }
     canvas {
       display: block;
-      width: 100%;
-      height: 100%;
     }
     #fullscreenBtn {
-      position: fixed;
+      position: absolute;
       top: 10px;
       right: 10px;
-      z-index: 999;
-      background: #000;
-      color: #0f0;
-      border: 1px solid #0f0;
+      z-index: 10;
+      background: white;
+      color: black;
       padding: 5px 10px;
-      font-family: monospace;
+      border: none;
       cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <button id="fullscreenBtn">⛶ Fullscreen</button>
+  <button id="fullscreenBtn">Fullscreen</button>
   <canvas id="artCanvas"></canvas>
-  <script src="script.js"></script>
+
+  <!-- Tone.js + dat.GUI -->
+  <script src="https://cdn.jsdelivr.net/npm/tone"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dat.gui/build/dat.gui.min.js"></script>
+
+  <script>
+    const canvas = document.getElementById('artCanvas');
+    const ctx = canvas.getContext('2d');
+    let w, h;
+    let pixelSize = 10;
+    let cameraOn = false;
+    let animationOn = true;
+
+    function resize() {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // === Fullscreen Button ===
+    document.getElementById('fullscreenBtn').addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+    // === VIDEO SETUP ===
+    const video = document.createElement('video');
+    video.autoplay = true;
+    video.playsInline = true;
+    video.muted = true;
+    video.style.display = 'none';
+    document.body.appendChild(video);
+
+    const hiddenCanvas = document.createElement('canvas');
+    const hiddenCtx = hiddenCanvas.getContext('2d');
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        console.error("Camera error:", err);
+      });
+
+    // === Audio Setup ===
+    document.body.addEventListener('click', () => {
+      Tone.start();
+    }, { once: true });
+
+    const synth = new Tone.Synth({ oscillator: { type: 'sawtooth' } }).toDestination();
+    let synthEnabled = false;
+
+    const noise = new Tone.Noise('white').start();
+    const noiseGain = new Tone.Gain(0.5).toDestination();
+    noise.connect(noiseGain);
+    noise.mute = true;
+
+    // === GUI ===
+    const gui = new dat.GUI();
+    const controls = {
+      pixelSize: 10,
+      cameraOn: false,
+      animationOn: true,
+      synthOn: false,
+      noiseOn: false
+    };
+
+    gui.add(controls, 'pixelSize', 2, 50).step(1).onChange(v => pixelSize = v);
+    gui.add(controls, 'cameraOn').onChange(v => cameraOn = v);
+    gui.add(controls, 'animationOn').onChange(v => animationOn = v);
+    gui.add(controls, 'synthOn').onChange(v => synthEnabled = v);
+    gui.add(controls, 'noiseOn').onChange(v => noise.mute = !v);
+
+    // === Keyboard Synth ===
+    document.addEventListener('keydown', (e) => {
+      if (!synthEnabled) return;
+      const keys = {
+        'a': 'C4', 's': 'D4', 'd': 'E4',
+        'f': 'F4', 'g': 'G4', 'h': 'A4',
+        'j': 'B4', 'k': 'C5'
+      };
+      const note = keys[e.key];
+      if (note) synth.triggerAttackRelease(note, '8n');
+    });
+
+    // === DRAW LOOP ===
+    function draw() {
+      if (!animationOn) return;
+
+      ctx.clearRect(0, 0, w, h);
+
+      if (cameraOn && video.readyState >= 2) {
+        hiddenCanvas.width = w;
+        hiddenCanvas.height = h;
+        hiddenCtx.drawImage(video, 0, 0, w, h);
+        const frame = hiddenCtx.getImageData(0, 0, w, h).data;
+
+        for (let x = 0; x < w; x += pixelSize) {
+          for (let y = 0; y < h; y += pixelSize) {
+            const i = (y * w + x) * 4;
+            const r = frame[i];
+            const g = frame[i + 1];
+            const b = frame[i + 2];
+            ctx.fillStyle = `rgb(${r},${g},${b})`;
+            ctx.fillRect(x, y, pixelSize, pixelSize);
+          }
+        }
+      } else {
+        // fallback pattern / animation if camera is off
+        for (let x = 0; x < w; x += pixelSize) {
+          for (let y = 0; y < h; y += pixelSize) {
+            const r = Math.random() * 255;
+            const g = Math.random() * 255;
+            const b = Math.random() * 255;
+            ctx.fillStyle = `rgb(${r},${g},${b})`;
+            ctx.fillRect(x, y, pixelSize, pixelSize);
+          }
+        }
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    draw();
+  </script>
 </body>
 </html>
