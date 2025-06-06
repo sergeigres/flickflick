@@ -99,6 +99,21 @@ function animate() {
 }
 animate();
 
+const togglePixelsBtn = document.getElementById('togglePixelsBtn');
+let pixelsRunning = true;
+
+togglePixelsBtn.addEventListener('click', () => {
+  if (pixelsRunning) {
+    cancelAnimationFrame(animationFrame);
+    togglePixelsBtn.textContent = 'Start Pixels';
+  } else {
+    animate();
+    togglePixelsBtn.textContent = 'Stop Pixels';
+  }
+  pixelsRunning = !pixelsRunning;
+});
+
+
 // === Utility ===
 function rand(max) {
   return Math.floor(Math.random() * max);
