@@ -108,10 +108,10 @@ function rand(max) {
 document.addEventListener('keydown', (e) => {
   if (!synthEnabled) return;
 
-  const keys = {
-    'a': 'C4', 's': 'D4', 'd': 'E4',
-    'f': 'F4', 'g': 'G4', 'h': 'A4',
-    'j': 'B4', 'k': 'C5'
+   const keys = {
+    'a': 'C2', 'w': 'Db2', 's': 'D2', 'e': 'Eb2', 'd': 'E2',
+    'f': 'F2', 't': 'Gb2', 'g': 'G2', 'y': 'Ab2', 'h': 'A2',
+    'u': 'Bb2', 'j': 'B2', 'k': 'C3'
   };
 
   const note = keys[e.key];
