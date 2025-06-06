@@ -42,11 +42,10 @@ let noiseFX = {
 noise.chain(noiseFX.delay, noiseFX.reverb, noiseFX.chorus, noiseFX.distortion, noiseGain);
 noise.mute = true;
 
-// === Synth Setup ===
 const synth = new Tone.Synth({ oscillator: { type: 'sawtooth' } }).toDestination();
 let synthEnabled = false;
 
-// === Controls (dat.GUI) ===
+// === Controls ===
 const gui = new dat.GUI();
 const controls = {
   noiseType: currentNoise,
@@ -82,9 +81,12 @@ gui.add(controls, 'chorusDepth', 0, 1).onChange(val => noiseFX.chorus.depth = va
 function drawPixels() {
   for (let x = 0; x < w; x += pixelSize) {
     for (let y = 0; y < h; y += pixelSize) {
-      ctx.fillStyle = colorMode
-        ? `rgb(${rand(255)}, ${rand(255)}, ${rand(255)})`
-        : `rgb(${(s = rand(255))}, ${s}, ${s})`;
+      if (colorMode) {
+        ctx.fillStyle = `rgb(${rand(255)}, ${rand(255)}, ${rand(255)})`;
+      } else {
+        let shade = rand(255);
+        ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`;
+      }
       ctx.fillRect(x, y, pixelSize, pixelSize);
     }
   }
@@ -96,7 +98,6 @@ function animate() {
 }
 animate();
 
-// === Pixel Animation Toggle ===
 const togglePixelsBtn = document.getElementById('togglePixelsBtn');
 let pixelsRunning = true;
 
@@ -111,6 +112,55 @@ togglePixelsBtn.addEventListener('click', () => {
   pixelsRunning = !pixelsRunning;
 });
 
+// === Drawing Feature ===
+let drawing = false;
+let lastX, lastY;
+
+function startDraw(x, y) {
+  drawing = true;
+  lastX = x;
+  lastY = y;
+}
+
+function drawLine(x, y) {
+  if (!drawing) return;
+  ctx.strokeStyle = `hsl(${rand(360)}, 100%, 70%)`;
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(lastX, lastY);
+  ctx.lineTo(x, y);
+  ctx.stroke();
+  lastX = x;
+  lastY = y;
+}
+
+function stopDraw() {
+  drawing = false;
+}
+
+// Desktop (mouse)
+canvas.addEventListener('mousedown', e => startDraw(e.offsetX, e.offsetY));
+canvas.addEventListener('mousemove', e => drawLine(e.offsetX, e.offsetY));
+canvas.addEventListener('mouseup', stopDraw);
+canvas.addEventListener('mouseleave', stopDraw);
+
+// Mobile (touch)
+canvas.addEventListener('touchstart', e => {
+  const touch = e.touches[0];
+  startDraw(touch.clientX, touch.clientY);
+});
+canvas.addEventListener('touchmove', e => {
+  const touch = e.touches[0];
+  drawLine(touch.clientX, touch.clientY);
+});
+canvas.addEventListener('touchend', stopDraw);
+
+// === Utility ===
+function rand(max) {
+  return Math.floor(Math.random() * max);
+}
+
 // === Keyboard Synth ===
 document.addEventListener('keydown', (e) => {
   if (!synthEnabled) return;
@@ -124,48 +174,6 @@ document.addEventListener('keydown', (e) => {
   const note = keys[e.key];
   if (note) {
     synth.triggerAttackRelease(note, '8n');
-    drawPixels(); // Instant pixel update
+    drawPixels(); // trigger pixel change
   }
 });
-
-// === Mouse/Touch Drawing ===
-let isDrawing = false;
-
-function getCursorPos(e) {
-  const rect = canvas.getBoundingClientRect();
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-  return {
-    x: Math.floor((clientX - rect.left) / pixelSize) * pixelSize,
-    y: Math.floor((clientY - rect.top) / pixelSize) * pixelSize
-  };
-}
-
-function drawAtCursor(e) {
-  if (!isDrawing) return;
-  const { x, y } = getCursorPos(e);
-  ctx.fillStyle = colorMode
-    ? `rgb(${rand(255)}, ${rand(255)}, ${rand(255)})`
-    : `rgb(${(s = rand(255))}, ${s}, ${s})`;
-  ctx.fillRect(x, y, pixelSize, pixelSize);
-}
-
-canvas.addEventListener('mousedown', (e) => {
-  isDrawing = true;
-  drawAtCursor(e);
-});
-canvas.addEventListener('mousemove', drawAtCursor);
-canvas.addEventListener('mouseup', () => isDrawing = false);
-canvas.addEventListener('mouseout', () => isDrawing = false);
-
-canvas.addEventListener('touchstart', (e) => {
-  isDrawing = true;
-  drawAtCursor(e);
-}, { passive: true });
-canvas.addEventListener('touchmove', drawAtCursor, { passive: true });
-canvas.addEventListener('touchend', () => isDrawing = false);
-
-// === Utility ===
-function rand(max) {
-  return Math.floor(Math.random() * max);
-}
