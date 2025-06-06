@@ -14,6 +14,23 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
+const video = document.createElement('video');
+video.autoplay = true;
+video.style.display = 'none';
+document.body.appendChild(video);
+
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(stream => {
+    video.srcObject = stream;
+  })
+  .catch(err => {
+    console.error("Camera access denied:", err);
+  });
+
+const hiddenCanvas = document.createElement('canvas');
+const hiddenCtx = hiddenCanvas.getContext('2d');
+
+
 // === Fullscreen Button ===
 document.getElementById('fullscreenBtn').addEventListener('click', () => {
   if (!document.fullscreenElement) {
@@ -49,6 +66,7 @@ let synthEnabled = false;
 // === Controls ===
 const gui = new dat.GUI();
 const controls = {
+  pixelFlicker: true,
   noiseType: currentNoise,
   noiseOn: false,
   synthOn: false,
@@ -58,6 +76,7 @@ const controls = {
   reverbDecay: 2,
   distortionAmount: 0.4,
   chorusDepth: 0.5
+
 };
 
 gui.add(controls, 'noiseType', noiseTypes).onChange(type => {
@@ -67,6 +86,10 @@ gui.add(controls, 'noiseType', noiseTypes).onChange(type => {
 });
 gui.add(controls, 'noiseOn').onChange(on => {
   noise.mute = !on;
+});
+gui.add(controls, 'pixelFlicker').onChange(state => {
+  if (state) animate();
+  else cancelAnimationFrame(animationFrame);
 });
 gui.add(controls, 'synthOn').onChange(on => {
   synthEnabled = on;
@@ -80,14 +103,24 @@ gui.add(controls, 'chorusDepth', 0, 1).onChange(val => noiseFX.chorus.depth = va
 
 // === Animation ===
 function drawPixels() {
+  hiddenCanvas.width = w;
+  hiddenCanvas.height = h;
+  hiddenCtx.drawImage(video, 0, 0, w, h);
+  let frame = hiddenCtx.getImageData(0, 0, w, h).data;
+
   for (let x = 0; x < w; x += pixelSize) {
     for (let y = 0; y < h; y += pixelSize) {
-      if (colorMode) {
-        ctx.fillStyle = `rgb(${rand(255)}, ${rand(255)}, ${rand(255)})`;
-      } else {
-        let shade = rand(255);
-        ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`;
+      const i = ((y * w) + x) * 4;
+      let r = frame[i];
+      let g = frame[i + 1];
+      let b = frame[i + 2];
+
+      if (!colorMode) {
+        let gray = 0.299 * r + 0.587 * g + 0.114 * b;
+        r = g = b = gray;
       }
+
+      ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
       ctx.fillRect(x, y, pixelSize, pixelSize);
     }
   }
