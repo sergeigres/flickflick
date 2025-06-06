@@ -118,5 +118,20 @@ document.addEventListener('keydown', (e) => {
   if (note) {
     synth.triggerAttackRelease(note, '8n');
     drawPixels(); // trigger pixel change
+    const togglePixelsBtn = document.getElementById('togglePixelsBtn');
+let pixelsRunning = true;
+
+togglePixelsBtn.addEventListener('click', () => {
+  if (pixelsRunning) {
+    cancelAnimationFrame(animationFrame);
+    togglePixelsBtn.textContent = 'Start Pixels';
+    pixelsRunning = false;
+  } else {
+    animate();
+    togglePixelsBtn.textContent = 'Stop Pixels';
+    pixelsRunning = true;
+  }
+});
+
   }
 });
