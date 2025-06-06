@@ -99,6 +99,7 @@ function animate() {
 }
 animate();
 
+// === Pixel Animation Toggle Button ===
 const togglePixelsBtn = document.getElementById('togglePixelsBtn');
 let pixelsRunning = true;
 
@@ -113,7 +114,6 @@ togglePixelsBtn.addEventListener('click', () => {
   pixelsRunning = !pixelsRunning;
 });
 
-
 // === Utility ===
 function rand(max) {
   return Math.floor(Math.random() * max);
@@ -123,7 +123,7 @@ function rand(max) {
 document.addEventListener('keydown', (e) => {
   if (!synthEnabled) return;
 
-   const keys = {
+  const keys = {
     'a': 'C2', 'w': 'Db2', 's': 'D2', 'e': 'Eb2', 'd': 'E2',
     'f': 'F2', 't': 'Gb2', 'g': 'G2', 'y': 'Ab2', 'h': 'A2',
     'u': 'Bb2', 'j': 'B2', 'k': 'C3'
@@ -133,20 +133,5 @@ document.addEventListener('keydown', (e) => {
   if (note) {
     synth.triggerAttackRelease(note, '8n');
     drawPixels(); // trigger pixel change
-    const togglePixelsBtn = document.getElementById('togglePixelsBtn');
-let pixelsRunning = true;
-
-togglePixelsBtn.addEventListener('click', () => {
-  if (pixelsRunning) {
-    cancelAnimationFrame(animationFrame);
-    togglePixelsBtn.textContent = 'Start Pixels';
-    pixelsRunning = false;
-  } else {
-    animate();
-    togglePixelsBtn.textContent = 'Stop Pixels';
-    pixelsRunning = true;
-  }
-});
-
   }
 });
