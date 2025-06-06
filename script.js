@@ -120,10 +120,16 @@ document.addEventListener('keydown', (e) => {
   if (!synthEnabled) return;
 
   const keys = {
-    'a': 'C2', 's': 'D2', 'd': 'E2',
-    'f': 'F2', 'g': 'G2', 'h': 'A2',
-    'j': 'B2', 'k': 'C3'
-  };
+  'a': 'C2',  'w': 'C#2',
+  's': 'D2',  'e': 'D#2',
+  'd': 'E2',
+  'f': 'F2',  't': 'F#2',
+  'g': 'G2',  'y': 'G#2',
+  'h': 'A2',  'u': 'A#2',
+  'j': 'B2',
+  'k': 'C3'
+};
+
 
   const note = keys[e.key];
   if (note) {
